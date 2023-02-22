@@ -30,6 +30,9 @@ import {
   RadialBarChart,
   RadialBar,
   Treemap,
+  Cross,
+  Customized,
+  Rectangle,
 } from "recharts";
 import { AreaChart, Area } from "recharts";
 import { scaleOrdinal } from "d3-scale";
@@ -200,19 +203,6 @@ const getAxisYDomain = (from, to, ref, offset) => {
   });
 
   return [(bottom | 0) - offset, (top | 0) + offset];
-};
-
-const initialState = {
-  data: initialData,
-  left: "dataMin",
-  right: "dataMax",
-  refAreaLeft: "",
-  refAreaRight: "",
-  top: "dataMax+1",
-  bottom: "dataMin-1",
-  top2: "dataMax+20",
-  bottom2: "dataMin-20",
-  animation: true,
 };
 
 const data3 = [
@@ -723,6 +713,53 @@ const CustomTooltip = ({ active, payload, label }) => {
   }
 
   return null;
+};
+
+const CustomizedCross = (props) => {
+  const { width, height, stroke, fill, formattedGraphicalItems } = props;
+  console.log(props);
+  // get first series in chart
+  const firstSeries = formattedGraphicalItems[0];
+  // get any point at any index in chart
+  const secondPoint = firstSeries?.props?.points[1];
+
+  // render custom content using points from the graph
+  return (
+    <Cross
+      y={secondPoint?.y}
+      x={secondPoint?.x}
+      top={5}
+      left={50}
+      height={height}
+      width={width}
+      stroke={stroke ?? "#000"}
+      fill={fill ?? "none"}
+    />
+  );
+};
+
+const CustomizedRectangle = (props) => {
+  const { formattedGraphicalItems } = props;
+  // get first and second series in chart
+  const firstSeries = formattedGraphicalItems[0];
+  const secondSeries = formattedGraphicalItems[1];
+
+  // render custom content using points from the graph
+  return firstSeries?.props?.points.map((firstSeriesPoint, index) => {
+    const secondSeriesPoint = secondSeries?.props?.points[index];
+    const yDifference = firstSeriesPoint.y - secondSeriesPoint.y
+
+    return (
+      <Rectangle
+        key={firstSeriesPoint.payload.name}
+        width={10}
+        height={yDifference}
+        x={secondSeriesPoint.x - 5}
+        y={secondSeriesPoint.y}
+        fill={yDifference > 0 ? 'red' : yDifference < 0 ? 'green' : 'none'}
+      />
+    )
+  })
 };
 
 const App = () => {
@@ -1557,6 +1594,52 @@ const App = () => {
         <Legend />
         <Bar dataKey="pv" barSize={20} fill="orange" />
       </BarChart>
+
+      <ResponsiveContainer width="100%" height={500}>
+        <LineChart
+          width={500}
+          height={300}
+          data={data}
+          margin={{
+            top: 5,
+            right: 30,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" dataKey="pv" stroke="#8884d8" />
+          <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
+          <Customized component={CustomizedCross} />
+        </LineChart>
+      </ResponsiveContainer>
+
+      <ResponsiveContainer width="100%" height={500}>
+      <LineChart
+        width={500}
+        height={300}
+        data={data}
+        margin={{
+          top: 5,
+          right: 30,
+          left: 20,
+          bottom: 5,
+        }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="name" />
+        <YAxis />
+        <Tooltip />
+        <Legend />
+        <Line type="monotone" dataKey="pv" stroke="#8884d8" />
+        <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
+        <Customized component={CustomizedRectangle} />
+      </LineChart>
+    </ResponsiveContainer>
     </div>
   );
 };
